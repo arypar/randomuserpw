@@ -5,11 +5,7 @@ import { ModeToggle } from "@/components/theme-toggle";
 
 const NavigationHeader: React.FC = () => {
 
-  const contactClick = () => {
-    const audio = new Audio(`/audios/audio6.mp3`);
-    audio.volume = 1;
-    audio.play();
-  };    
+
   return (
     <header className="w-full bg-background border-b border-border">
       <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -23,12 +19,12 @@ const NavigationHeader: React.FC = () => {
             </Link>
           </li>
           <li>
-            <Link href="/upload" className="hover:text-primary transition-colors">
+            <Link href="/" className="hover:text-primary transition-colors">
               Leaderboard
             </Link>
           </li>
           <li>
-            <Link href="#" onClick={() => contactClick()} className="hover:text-primary transition-colors">
+            <Link href="/" className="hover:text-primary transition-colors">
               Contact
             </Link>
           </li>

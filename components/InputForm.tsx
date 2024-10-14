@@ -33,15 +33,15 @@ const formSchema = z.object({
 })
 
 export function InputForm() {
-  const [gameData, setGameData] = useState<{ playerID: string; playerName: any; buyInSum: string; buyOutSum: string; inGame: string; net: string; }[]>([]); // Changed from null to an empty array
-
-  type Player = { playerID: string; playerName: any; buyInSum: string; buyOutSum: string; inGame: string; net: string; };
+  const [gameData, setGameData] = useState<{ playerID: string; playerName: string; buyInSum: string; buyOutSum: string; inGame: string; net: string; }[]>([]); // Changed from null to an empty array
+  type Player = { playerID: string; playerName: string; buyInSum: string; buyOutSum: string; inGame: string; net: string; };
   
   type Transaction = {
     from: string;
     to: string;
     amount: string; // Amount is also stored as a string with a dollar sign
   };
+
   
   function settlePokerGame(playersData: Player[]): Transaction[] {
     // Step 1: Separate creditors (positive net) and debtors (negative net)
@@ -104,13 +104,13 @@ export function InputForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Handle form submission here
     console.log(values)
-    const res = await fetch('https://cors-anywhere.herokuapp.com/https://www.pokernow.club/games/pglvrWEWQjqMAGI0QKkiTeW_K/players_sessions', {
+    const res = await fetch('https://cors-anywhere.herokuapp.com/' + values.link + '/players_sessions', {
       headers : {
         'origin' : '*'
       }
     })
     let data = await res.json()
-    var playersData = await Object.keys(data.playersInfos).map(playerID => {
+    let playersData = await Object.keys(data.playersInfos).map(playerID => {
       const player = data.playersInfos[playerID];
       return {
         playerID: playerID,
@@ -179,7 +179,7 @@ export function InputForm() {
       <TableFooter>
         <TableRow>
           <TableCell colSpan={3}>Total</TableCell>
-          <TableCell className="text-right">$2,500.00</TableCell>
+          <TableCell className="text-right">0</TableCell>
         </TableRow>
       </TableFooter>
       
