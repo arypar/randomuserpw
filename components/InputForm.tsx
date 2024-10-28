@@ -5,17 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-
-
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -27,171 +22,126 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+interface User {
+  userID: string;
+  userName: string;
+  email: string;
+  picture: {
+    large: string;
+    medium: string;
+    thumbnail: string;
+  };
+  location: {
+    city: string;
+    country: string;
+  };
+  phone: string;
+  cell: string;
+  login: {
+    username: string;
+    password: string;
+  };
+}
 
 const formSchema = z.object({
-  link: z.string().url({ message: "Please enter a valid URL" }),
+  count: z.string().transform((v) => Number(v) || 0),
 })
 
 export function InputForm() {
-  const [gameData, setGameData] = useState<{ playerID: string; playerName: string; buyInSum: string; buyOutSum: string; inGame: string; net: string; }[]>([]); // Changed from null to an empty array
-  type Player = { playerID: string; playerName: string; buyInSum: string; buyOutSum: string; inGame: string; net: string; };
-  
-  type Transaction = {
-    from: string;
-    to: string;
-    amount: string; // Amount is also stored as a string with a dollar sign
-  };
-
-  
-  function settlePokerGame(playersData: Player[]): Transaction[] {
-    // Step 1: Separate creditors (positive net) and debtors (negative net)
-    const creditors: { playerName: string; amount: number }[] = [];
-    const debtors: { playerName: string; amount: number }[] = [];
-  
-    playersData.forEach(player => {
-      const net = parseFloat(player.net)
-      if (net > 0) {
-        creditors.push({ playerName: player.playerName, amount: net }); // Positive net (owed money)
-      } else if (net < 0) {
-        debtors.push({ playerName: player.playerName, amount: -net }); // Negative net (owes money)
-      }
-    });
-  
-    const transactions: Transaction[] = [];
-  
-    // Step 2: Pair creditors and debtors
-    let i = 0; // Index for creditors
-    let j = 0; // Index for debtors
-  
-    while (i < creditors.length && j < debtors.length) {
-      const creditor = creditors[i];
-      const debtor = debtors[j];
-  
-      // Calculate the payment amount
-      const payment = Math.min(creditor.amount, debtor.amount);
-  
-      // Record the transaction
-      transactions.push({
-        from: debtor.playerName,
-        to: creditor.playerName,
-        amount: `${payment}`
-      });
-  
-      // Update the amounts
-      creditor.amount -= payment;
-      debtor.amount -= payment;
-  
-      // Move to the next creditor or debtor if fully paid
-      if (creditor.amount === 0) i++;
-      if (debtor.amount === 0) j++;
-    }
-  
-    return transactions;
-  }
-  
-
-
-
-
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      link: "",
-    },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Handle form submission here
-    console.log(values)
-    const res = await fetch('https://cors-anywhere.herokuapp.com/' + values.link + '/players_sessions', {
-      headers : {
-        'origin' : '*'
-      }
-    })
-    let data = await res.json()
-    let playersData = await Object.keys(data.playersInfos).map(playerID => {
-      const player = data.playersInfos[playerID];
-      return {
-        playerID: playerID,
-        playerName: player.names[0],
-        buyInSum: `${player.buyInSum/100}`,
-        buyOutSum: `${player.buyOutSum/100}`,
-        inGame: `${player.inGame/100}`,
-        net: `${player.net/100}`
-      };
-    });
-    playersData.sort((a, b) => parseFloat(b.net) - parseFloat(a.net))
-    setGameData(playersData)
-    console.log(settlePokerGame(playersData))
+    try {
+      const res = await fetch(`https://randomuser.me/api/?results=${values.count.toString()}`)
+      const data = await res.json()
+
+      const usersData = data.results.map((user: any) => ({
+        userID: user.login.uuid,
+        userName: `${user.name.title} ${user.name.first} ${user.name.last}`,
+        email: user.email,
+        picture: user.picture,
+        location: {
+          city: user.location.city,
+          country: user.location.country,
+        },
+        phone: user.phone,
+        cell: user.cell,
+        login: {
+          username: user.login.username,
+          password: user.login.password,
+        },
+      }))
+      setUsers(usersData)
+    } catch (error) {
+      console.error("Failed to fetch user data:", error)
+    }
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen w-full">
-      <div className="w-full max-w-md">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="link"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Enter PokerNow Link</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Please enter a valid URL to process.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit">Submit</Button>
-          </form>
-        </Form>
+    <div className="space-y-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="count"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Enter Number of Users</FormLabel>
+                <FormControl>
+                  <Input placeholder="1" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Please enter a valid number.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit">Submit</Button>
+        </form>
+      </Form>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {users.map((user) => (
+          <Card key={user.userID} className="shadow-lg">
+            <CardHeader>
+              <img src={user.picture.large} alt={user.userName} className="w-full h-32 object-cover rounded-t-lg" />
+              <CardTitle>{user.userName}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Location:</strong> {user.location.city}, {user.location.country}</p>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => setSelectedUser(user)}>Hack</Button>
+            </CardFooter>
+          </Card>
+        ))}
       </div>
 
-      <div className="w-full max-w-md">
-      <Table>
-      <TableCaption>Poker Ledger</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[100px]">Player Name</TableHead>
-          <TableHead>Buy In</TableHead>
-          <TableHead>Buy Out</TableHead>
-          <TableHead className="text-right">Net</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {gameData.map((player) => (
-          <TableRow key={player.playerID}>
-            <TableCell className="font-medium">{player.playerName}</TableCell>
-            <TableCell>{player.buyInSum}</TableCell>
-            <TableCell>{player.buyOutSum}</TableCell>
-            <TableCell className="text-right">{player.net}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-
-       
-      <TableFooter>
-        <TableRow>
-          <TableCell colSpan={3}>Total</TableCell>
-          <TableCell className="text-right">0</TableCell>
-        </TableRow>
-      </TableFooter>
-      
-    </Table>
-</div>
-      
+      {selectedUser && (
+        <Dialog open={true} onOpenChange={() => setSelectedUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selectedUser.userName}'s Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p><strong>Username:</strong> {selectedUser.login.username}</p>
+              <p><strong>Password:</strong> {selectedUser.login.password}</p>
+            </div>
+            <Button onClick={() => setSelectedUser(null)} className="mt-4">Close</Button>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
-
-
-
-
-
   )
 }
-export default InputForm;
+
+export default InputForm
