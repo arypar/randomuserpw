@@ -46,8 +46,11 @@ interface User {
 }
 
 const formSchema = z.object({
-  count: z.string().transform((v) => Number(v) || 0),
-})
+  count: z
+    .string()
+    .transform((v) => Number(v) || 0)
+    .refine((v) => v >= 1, { message: "Count must be greater than or equal to 1" }),
+});
 
 export function InputForm() {
   const [users, setUsers] = useState<User[]>([])
